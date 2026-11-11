@@ -548,24 +548,36 @@
 
         /* =====================================================
            DISTRIBUIÇÃO ENTRE OS DOIS NÚMEROS
-           Cada cliente novo é sorteado para um dos números e
-           continua sempre com o mesmo número nas próximas vezes.
-           Com muitos clientes, a divisão fica em torno de 50% / 50%.
+           A cada clique o número alterna: 1º clique -> número 1,
+           2º clique -> número 2, 3º clique -> número 1, e assim
+           por diante (continua alternando mesmo após recarregar).
+           Cada aparelho novo começa por um número sorteado, para
+           que os clientes não caiam todos no mesmo número.
            ===================================================== */
-        function numeroDoCliente() {
-            let indice = null;
-            try { indice = localStorage.getItem("ceee_atendente"); } catch (e) {}
+        const CHAVE_ULTIMO = "ceee_ultimo_numero";
+        let ultimoIndiceMemoria = null; // usado se o navegador bloquear o localStorage
 
-            indice = indice === null ? NaN : parseInt(indice, 10);
-            if (isNaN(indice) || !NUMEROS_WHATSAPP[indice]) {
+        function proximoNumero() {
+            let ultimo = ultimoIndiceMemoria;
+            try {
+                const salvo = localStorage.getItem(CHAVE_ULTIMO);
+                if (salvo !== null) ultimo = parseInt(salvo, 10);
+            } catch (e) {}
+
+            let indice;
+            if (ultimo === null || isNaN(ultimo) || !NUMEROS_WHATSAPP[ultimo]) {
                 indice = Math.floor(Math.random() * NUMEROS_WHATSAPP.length);
-                try { localStorage.setItem("ceee_atendente", String(indice)); } catch (e) {}
+            } else {
+                indice = (ultimo + 1) % NUMEROS_WHATSAPP.length;
             }
+
+            ultimoIndiceMemoria = indice;
+            try { localStorage.setItem(CHAVE_ULTIMO, String(indice)); } catch (e) {}
             return NUMEROS_WHATSAPP[indice];
         }
 
         function abrirWhatsApp(assunto) {
-            const numero = numeroDoCliente();
+            const numero = proximoNumero();
             const texto = encodeURIComponent("Olá! Gostaria de atendimento para: " + assunto + ".");
             window.open("https://wa.me/" + numero + "?text=" + texto, "_blank", "noopener");
         }
